@@ -1,42 +1,72 @@
+using PanVerse.Models;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-var summaries = new[]
+var handpans = new List<Handpan>
 {
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
+    new Handpan { Id = 1, Title = "D Kurd", Maker = "Ayasa", Scale = "D Minor", Price = 2800, Description = "Warm and meditative tone" },
+    new Handpan { Id = 2, Title = "Integral", Maker = "PANArt", Scale = "A Pygmy", Price = 4200, Description = "The original handpan" },
+    new Handpan { Id = 3, Title = "Spacedrum", Maker = "Metal Sounds", Scale = "C# Minor", Price = 1900, Description = "Great entry level pan" }
 };
-
-app.MapGet("/weatherforecast", () =>
+// GET all handpans
+app.MapGet("/handpans", () =>
 {
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast")
-.WithOpenApi();
+    return Results.Ok(handpans);
+});
+
+// GET single handpan by ID
+app.MapGet("/handpans/{id}", (int id) =>
+{
+    var handpan = handpans.FirstOrDefault(h => h.Id == id);
+    if (handpan is null)
+        return Results.NotFound($"Handpan with ID {id} not found");
+    return Results.Ok(handpan);
+});
+
+
+// POST — create a new handpan
+app.MapPost("/handpans", (Handpan handpan) =>
+{
+    handpan.Id = handpans.Max(h => h.Id) + 1;
+    handpans.Add(handpan);
+    return Results.Created($"/handpans/{handpan.Id}", handpan);
+});
+// PUT — update an existing handpan
+app.MapPut("/handpans/{id}", (int id, Handpan updated) =>
+{
+    var handpan = handpans.FirstOrDefault(h => h.Id == id);
+    if (handpan is null)
+        return Results.NotFound($"Handpan with ID {id} not found");
+
+    handpan.Title = updated.Title;
+    handpan.Maker = updated.Maker;
+    handpan.Scale = updated.Scale;
+    handpan.Price = updated.Price;
+    handpan.Description = updated.Description;
+
+    return Results.Ok(handpan);
+});
+
+// DELETE — remove a handpan
+app.MapDelete("/handpans/{id}", (int id) =>
+{
+    var handpan = handpans.FirstOrDefault(h => h.Id == id);
+    if (handpan is null)
+        return Results.NotFound($"Handpan with ID {id} not found");
+
+    handpans.Remove(handpan);
+    return Results.NoContent();
+});
 
 app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
