@@ -1,0 +1,6 @@
+@PanVerse_HostAddress = http://localhost:5250
+
+GET {{PanVerse_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
